@@ -47,7 +47,7 @@ interface Web3ContextType {
   // Parser Actions
   submitProject: (theme: string, githubUrl: string) => Promise<{ requestId: string; txHash: string }>;
   getAnalysis: (requestId: any) => Promise<{ theme: string; analysis: string; completed: boolean }>;
-  
+
   // LLM Actions
   analyzeProject: (theme: string, analysis: string) => Promise<{ requestId: string; txHash: string }>;
   getScore: (requestId: any) => Promise<{ score: string; completed: boolean }>;
@@ -74,7 +74,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   const [account, setAccount] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
-  
+
   // Deposits (STT)
   const [parserDeposit, setParserDeposit] = useState<string>("0.1");
   const [llmDeposit, setLlmDeposit] = useState<string>("0.1");
@@ -123,7 +123,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isCorrectNetwork && (window as any).ethereum) {
         try {
           const provider = new ethers.BrowserProvider((window as any).ethereum);
-          
+
           const parserContract = new ethers.Contract(PARSER_AGENT_ADDRESS, PARSER_ABI, provider);
           const pDep = await parserContract.getRequiredDeposit();
           setParserDeposit(ethers.formatEther(pDep));
@@ -198,15 +198,15 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   const submitProject = async (theme: string, githubUrl: string): Promise<{ requestId: string; txHash: string }> => {
     if (!account) throw new Error("Wallet not connected");
     if (!isCorrectNetwork) throw new Error("Incorrect network. Please switch to Somnia Testnet.");
-    
+
     const provider = new ethers.BrowserProvider((window as any).ethereum);
     const signer = await provider.getSigner();
     const contract = new ethers.Contract(PARSER_AGENT_ADDRESS, PARSER_ABI, signer);
-    
+
     const depositWei = ethers.parseEther(parserDeposit);
     const tx = await contract.submitProject(theme, githubUrl, { value: depositWei });
     const receipt = await tx.wait();
-    
+
     if (!receipt) throw new Error("Transaction failed (no receipt returned).");
 
     let requestId = "0";
@@ -237,7 +237,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
                 requestId = idVal.toString();
                 break;
               }
-            } catch (err) {}
+            } catch (err) { }
           }
         }
       }
@@ -246,7 +246,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
     if (requestId === "0") {
       throw new Error("Failed to extract requestId from transaction logs.");
     }
-    
+
     return { requestId, txHash: receipt.hash };
   };
 
@@ -273,15 +273,15 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   const analyzeProject = async (theme: string, analysis: string): Promise<{ requestId: string; txHash: string }> => {
     if (!account) throw new Error("Wallet not connected");
     if (!isCorrectNetwork) throw new Error("Incorrect network. Please switch to Somnia Testnet.");
-    
+
     const provider = new ethers.BrowserProvider((window as any).ethereum);
     const signer = await provider.getSigner();
     const contract = new ethers.Contract(LLM_JUDGE_ADDRESS, LLM_ABI, signer);
-    
+
     const depositWei = ethers.parseEther(llmDeposit);
     const tx = await contract.analyzeProject(theme, analysis, { value: depositWei });
     const receipt = await tx.wait();
-    
+
     if (!receipt) throw new Error("Transaction failed (no receipt returned).");
 
     let requestId = "0";
@@ -312,7 +312,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
                 requestId = idVal.toString();
                 break;
               }
-            } catch (err) {}
+            } catch (err) { }
           }
         }
       }
@@ -321,7 +321,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
     if (requestId === "0") {
       throw new Error("Failed to extract requestId from transaction logs.");
     }
-    
+
     return { requestId, txHash: receipt.hash };
   };
 
@@ -334,13 +334,13 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
     const contract = new ethers.Contract(LLM_JUDGE_ADDRESS, LLM_ABI, provider);
     try {
       const result = await contract.getScore(cleanId);
-      
+
       // If completed on-chain, sync to leaderboard locally
       if (result[1]) {
         const scoreText = result[0];
         try {
           const parsedScore = parseLLMResult(scoreText);
-          
+
           // Check if already in leaderboard
           const currentLeaderboard = getLeaderboard();
           const cleanIdStr = String(cleanId);
@@ -355,9 +355,9 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
               timestamp: Date.now()
             });
           }
-        } catch(e) {}
+        } catch (e) { }
       }
-      
+
       return {
         score: result[0],
         completed: result[1]

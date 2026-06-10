@@ -4,14 +4,14 @@ import { TerminalLogs } from '../components/TerminalLogs';
 import { CircularScoreMeter, BarScoreMeter } from '../components/ScoreMeter';
 import { useWeb3, PARSER_AGENT_ADDRESS, LLM_JUDGE_ADDRESS, SOMNIA_EXPLORER_URL } from '../context/Web3Context';
 import { PARSER_LOGS, LLM_LOGS, parseLLMResult, type ProjectAnalysis, type ScoreReport } from '../utils/mockData';
-import { 
-  Sparkles, 
-  Cpu, 
-  CheckCircle, 
-  Award, 
-  FileCode, 
-  Globe, 
-  Lightbulb, 
+import {
+  Sparkles,
+  Cpu,
+  CheckCircle,
+  Award,
+  FileCode,
+  Globe,
+  Lightbulb,
   RotateCcw,
   Wallet,
   AlertTriangle
@@ -27,29 +27,29 @@ interface SubmitProps {
 
 type PipelineState = 'FORM' | 'PARSING_TX' | 'PARSING_POLL' | 'PARSED' | 'SCORING_TX' | 'SCORING_POLL' | 'COMPLETED';
 
-export const Submit: React.FC<SubmitProps> = ({ 
-  setActiveTab, 
-  parserRequestId, 
+export const Submit: React.FC<SubmitProps> = ({
+  setActiveTab,
+  parserRequestId,
   setParserRequestId,
   scoreRequestId,
   setScoreRequestId
 }) => {
-  const { 
-    parserDeposit, 
+  const {
+    parserDeposit,
     llmDeposit,
-    submitProject, 
+    submitProject,
     getAnalysis,
     analyzeProject,
     getScore,
-    account, 
-    isCorrectNetwork, 
-    connectWallet 
+    account,
+    isCorrectNetwork,
+    connectWallet
   } = useWeb3();
 
   // --- React State Structure ---
   const [theme, setTheme] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
-  
+
   const [githubAnalysis, setGithubAnalysis] = useState<string>('');
   const [scoreResult, setScoreResult] = useState<string>('');
 
@@ -175,7 +175,7 @@ export const Submit: React.FC<SubmitProps> = ({
   const handleStartAnalysis = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!theme.trim()) {
       setError('Please provide a hackathon theme.');
       return;
@@ -231,7 +231,7 @@ export const Submit: React.FC<SubmitProps> = ({
         const lines = githubAnalysis.split('\n');
         const fallback: ProjectAnalysis = {
           projectName: "Parsed Project",
-          description: "Readme parsing details completed.",
+          description: " parsing details completed.",
           features: [],
           useCases: []
         };
@@ -325,15 +325,15 @@ export const Submit: React.FC<SubmitProps> = ({
 
   const stepsList = [
     "Wallet Connected",
-    "README Analysis Started",
-    "README Analysis Complete",
+    " Analysis Started",
+    " Analysis Complete",
     "AI Evaluation Started",
     "AI Evaluation Complete"
   ];
 
   return (
     <div className="max-w-4xl mx-auto py-6 px-4 space-y-8">
-      
+
       {/* Visual Pipeline Steps Stepper */}
       <div className="bg-darkCard/25 border border-white/5 rounded-2xl p-6 mb-4">
         <h4 className="text-[10px] uppercase font-bold tracking-widest text-gray-500 text-center mb-6">
@@ -348,18 +348,16 @@ export const Submit: React.FC<SubmitProps> = ({
 
             return (
               <div key={idx} className="flex flex-col items-center text-center space-y-2 relative">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-extrabold border transition-all duration-300 ${
-                  isCompleted 
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-extrabold border transition-all duration-300 ${isCompleted
                     ? 'bg-successGreen/15 border-successGreen text-successGreen shadow-[0_0_12px_rgba(0,230,118,0.35)]'
                     : isActive
                       ? 'bg-cyberCyan/15 border-cyberCyan text-cyberCyan shadow-[0_0_12px_rgba(102,252,241,0.35)] animate-pulse'
                       : 'bg-black/40 border-white/10 text-gray-500'
-                }`}>
+                  }`}>
                   {stepNum}
                 </div>
-                <span className={`text-[10px] uppercase font-bold tracking-wider leading-relaxed ${
-                  isCompleted || isActive ? 'text-white font-semibold' : 'text-gray-500'
-                }`}>
+                <span className={`text-[10px] uppercase font-bold tracking-wider leading-relaxed ${isCompleted || isActive ? 'text-white font-semibold' : 'text-gray-500'
+                  }`}>
                   {label}
                 </span>
               </div>
@@ -379,7 +377,7 @@ export const Submit: React.FC<SubmitProps> = ({
           <span className="text-cyberBlue block break-all">{LLM_JUDGE_ADDRESS}</span>
         </div>
       </div>
-      
+
       {/* --- STEP 1: LANDING INFO AND STATE VIEW --- */}
       {pipelineState === 'FORM' && (
         <div className="text-center space-y-6 max-w-2xl mx-auto py-4">
@@ -389,7 +387,7 @@ export const Submit: React.FC<SubmitProps> = ({
           <p className="text-gray-300 text-base md:text-lg leading-relaxed">
             Autonomous, AI-powered on-chain judging platform built on Somnia L1. Automate repository analysis and get transparent scorecards in seconds.
           </p>
-          
+
           {!walletConnected ? (
             <button
               onClick={connectWallet}
@@ -506,11 +504,11 @@ export const Submit: React.FC<SubmitProps> = ({
       )}
 
       {/* --- STEP 3, 4 & 5: README ANALYSIS SECTION --- */}
-      {(pipelineState === 'PARSING_TX' || pipelineState === 'PARSING_POLL' || pipelineState === 'PARSED') && (
+      {parserRequestId && (pipelineState === 'PARSING_TX' || pipelineState === 'PARSING_POLL' || pipelineState === 'PARSED' || pipelineState === 'SCORING_TX' || pipelineState === 'SCORING_POLL' || pipelineState === 'COMPLETED') && (
         <div className="space-y-6 text-left max-w-3xl mx-auto">
           <div className="flex items-center justify-between border-b border-cyberCyan/10 pb-3">
             <h2 className="text-lg font-bold uppercase tracking-wider text-gray-200">
-              Stage 1: README Analysis
+              Stage 1:  Analysis
             </h2>
             <span className="text-xs text-gray-500 font-mono">
               {parserRequestId ? `ID: ${parserRequestId}` : "Waiting for confirmation..."}
@@ -523,19 +521,19 @@ export const Submit: React.FC<SubmitProps> = ({
               <div className="flex flex-col gap-4 text-center pb-4 border-b border-white/5 mb-4">
                 <div className="w-8 h-8 border-4 border-cyberCyan/20 border-t-cyberCyan rounded-full animate-spin mx-auto"></div>
                 <span className="text-sm text-gray-300 font-semibold animate-pulse">
-                  {pipelineState === 'PARSING_TX' 
-                    ? "Submitting README analysis request to MetaMask..."
-                    : "README Analysis Started. Polling submissions mapping..."
+                  {pipelineState === 'PARSING_TX'
+                    ? "Submitting  analysis request to MetaMask..."
+                    : " Analysis Started. Polling submissions mapping..."
                   }
                 </span>
 
                 {parserTxHash && (
                   <div className="text-xs text-gray-500 font-mono flex items-center justify-center gap-1.5 break-all select-all">
-                    Tx Hash: 
-                    <a 
-                      href={`${SOMNIA_EXPLORER_URL}/tx/${parserTxHash}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    Tx Hash:
+                    <a
+                      href={`${SOMNIA_EXPLORER_URL}/tx/${parserTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-cyberCyan hover:underline hover:text-cyberCyan/80 font-bold"
                     >
                       {parserTxHash}
@@ -543,8 +541,8 @@ export const Submit: React.FC<SubmitProps> = ({
                   </div>
                 )}
               </div>
-              <TerminalLogs 
-                logs={PARSER_LOGS} 
+              <TerminalLogs
+                logs={PARSER_LOGS}
                 onComplete={handleParserLogsFinished}
                 speedMs={1200}
               />
@@ -556,19 +554,19 @@ export const Submit: React.FC<SubmitProps> = ({
             <Card hover={false} className="border-cyberCyan/25 py-6">
               {parserTxHash && (
                 <div className="text-xs text-gray-500 font-mono text-center mb-4 break-all select-all">
-                  Tx Hash: 
-                  <a 
-                    href={`${SOMNIA_EXPLORER_URL}/tx/${parserTxHash}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  Tx Hash:
+                  <a
+                    href={`${SOMNIA_EXPLORER_URL}/tx/${parserTxHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-cyberCyan hover:underline hover:text-cyberCyan/80 font-bold"
                   >
                     {parserTxHash}
                   </a>
                 </div>
               )}
-              <TerminalLogs 
-                logs={PARSER_LOGS} 
+              <TerminalLogs
+                logs={PARSER_LOGS}
                 onComplete={handleParserLogsFinished}
                 speedMs={1200}
               />
@@ -582,15 +580,15 @@ export const Submit: React.FC<SubmitProps> = ({
                 <div className="flex items-center gap-2.5">
                   <CheckCircle className="h-5 w-5 text-successGreen" />
                   <span className="text-sm text-successGreen font-bold uppercase tracking-wider">
-                    README Analysis Completed
+                    Analysis Completed
                   </span>
                 </div>
                 <div className="text-xs text-gray-400 font-mono flex items-center gap-2">
                   <span>ID: <span className="text-successGreen font-bold">{parserRequestId}</span></span>
                   {parserTxHash && (
-                    <a 
-                      href={`${SOMNIA_EXPLORER_URL}/tx/${parserTxHash}`} 
-                      target="_blank" 
+                    <a
+                      href={`${SOMNIA_EXPLORER_URL}/tx/${parserTxHash}`}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-cyberCyan hover:underline font-bold"
                     >
@@ -666,7 +664,7 @@ export const Submit: React.FC<SubmitProps> = ({
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between bg-black/40 border border-white/5 rounded-xl p-4 text-xs font-semibold">
                     <span className="text-gray-400 uppercase tracking-wider">Evaluation Fee Deposit:</span>
                     <span className="font-mono font-bold text-cyberCyan text-sm">{llmDeposit} STT</span>
@@ -687,7 +685,7 @@ export const Submit: React.FC<SubmitProps> = ({
       )}
 
       {/* --- STEP 7 & 8: AI EVALUATION SECTION --- */}
-      {githubAnalysis && parserLogsFinished && (loadingScore || scoreRequestId || scoreResult) && (
+      {(loadingScore || scoreRequestId || scoreResult) && (
         <div className="space-y-6 text-left max-w-3xl mx-auto border-t border-white/5 pt-8 animate-fadeIn">
           <div className="flex items-center justify-between border-b border-cyberCyan/10 pb-3">
             <h2 className="text-lg font-bold uppercase tracking-wider text-gray-200">
@@ -708,7 +706,7 @@ export const Submit: React.FC<SubmitProps> = ({
               <p className="text-xs text-gray-300 leading-relaxed">
                 {error}
               </p>
-              <button 
+              <button
                 onClick={handleTriggerLLM}
                 className="bg-red-500 text-white font-extrabold px-6 py-2 rounded-xl text-xs uppercase tracking-wider hover:bg-red-600 transition-all active:scale-95"
               >
@@ -740,11 +738,11 @@ export const Submit: React.FC<SubmitProps> = ({
                 </span>
                 {scoreTxHash && (
                   <div className="text-xs text-gray-500 font-mono flex items-center justify-center gap-1.5 break-all select-all">
-                    Tx Hash: 
-                    <a 
-                      href={`${SOMNIA_EXPLORER_URL}/tx/${scoreTxHash}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    Tx Hash:
+                    <a
+                      href={`${SOMNIA_EXPLORER_URL}/tx/${scoreTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-cyberCyan hover:underline hover:text-cyberCyan/80 font-bold"
                     >
                       {scoreTxHash}
@@ -752,8 +750,8 @@ export const Submit: React.FC<SubmitProps> = ({
                   </div>
                 )}
               </div>
-              <TerminalLogs 
-                logs={LLM_LOGS} 
+              <TerminalLogs
+                logs={LLM_LOGS}
                 onComplete={handleScoreLogsFinished}
                 speedMs={1200}
               />
@@ -765,19 +763,19 @@ export const Submit: React.FC<SubmitProps> = ({
             <Card hover={false} className="border-neonPurple/25 py-6">
               {scoreTxHash && (
                 <div className="text-xs text-gray-500 font-mono text-center mb-4 break-all select-all">
-                  Tx Hash: 
-                  <a 
-                    href={`${SOMNIA_EXPLORER_URL}/tx/${scoreTxHash}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  Tx Hash:
+                  <a
+                    href={`${SOMNIA_EXPLORER_URL}/tx/${scoreTxHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-cyberCyan hover:underline hover:text-cyberCyan/80 font-bold"
                   >
                     {scoreTxHash}
                   </a>
                 </div>
               )}
-              <TerminalLogs 
-                logs={LLM_LOGS} 
+              <TerminalLogs
+                logs={LLM_LOGS}
                 onComplete={handleScoreLogsFinished}
                 speedMs={1200}
               />
@@ -796,13 +794,13 @@ export const Submit: React.FC<SubmitProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <button 
+                  <button
                     onClick={() => setActiveTab('leaderboard')}
                     className="flex items-center gap-1.5 text-xs text-cyberCyan hover:underline hover:text-cyberCyan/80 font-bold bg-cyberCyan/10 px-3 py-1.5 rounded-lg border border-cyberCyan/20 uppercase tracking-wide font-mono"
                   >
                     View Leaderboard
                   </button>
-                  <button 
+                  <button
                     onClick={handleReset}
                     className="flex items-center gap-1.5 text-xs text-gray-300 hover:underline hover:text-white font-bold bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 uppercase tracking-wide font-mono"
                   >
@@ -829,7 +827,7 @@ export const Submit: React.FC<SubmitProps> = ({
                     <Award className="h-5 w-5" />
                     <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">Scorecard: {parsedScore.projectName}</h3>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <BarScoreMeter score={parsedScore.themeRelevance} label="Theme Relevance" />
                     <BarScoreMeter score={parsedScore.innovation} label="Innovation" />

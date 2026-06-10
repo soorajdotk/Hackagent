@@ -9,10 +9,10 @@ interface LeaderboardProps {
   setScoreRequestId: (id: string) => void;
 }
 
-export const Leaderboard: React.FC<LeaderboardProps> = ({ 
-  setActiveTab, 
-  setParserRequestId, 
-  setScoreRequestId 
+export const Leaderboard: React.FC<LeaderboardProps> = ({
+  setActiveTab,
+  setParserRequestId,
+  setScoreRequestId
 }) => {
   const { getLeaderboard } = useWeb3();
   const [items, setItems] = useState<LeaderboardItem[]>([]);
@@ -29,7 +29,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   };
 
   const getRankBadge = (rank: number) => {
-    switch(rank) {
+    switch (rank) {
       case 1:
         return 'bg-yellow-400 text-black font-extrabold shadow-[0_0_12px_rgba(250,204,21,0.5)]';
       case 2:
@@ -88,7 +88,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
             className="w-full bg-darkCard/30 border border-white/5 focus:border-cyberCyan/50 focus:ring-1 focus:ring-cyberCyan/30 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all font-medium"
           />
         </div>
-        
+
         <div className="text-sm text-gray-400 font-semibold uppercase tracking-wider">
           Total Audited: <span className="text-cyberCyan font-bold font-mono">{filteredItems.length}</span>
         </div>
@@ -112,7 +112,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
             <tbody className="divide-y divide-white/5 text-sm font-medium">
               {filteredItems.length > 0 ? (
                 filteredItems.map((item, idx) => (
-                  <tr 
+                  <tr
                     key={item.id}
                     className="hover:bg-white/5 transition-colors cursor-pointer group"
                     onClick={() => handleRowClick(item.id)}

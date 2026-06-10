@@ -21,7 +21,7 @@ export const MOCK_ANALYSES: Record<string, ProjectAnalysis> = {
     projectName: "HackJudge-AI",
     description: "An AI-powered decentralized hackathon evaluation platform built on Somnia L1. Automates repository parsing and provides objective on-chain scoring through LLM agents.",
     features: [
-      "Autonomous README Parser Agent",
+      "Autonomous  Parser Agent",
       "Consensus-based LLM Judge Contract integration",
       "Gas-optimized Somnia L1 smart contracts",
       "Interactive analytics dashboard for organizers and developers"
@@ -100,7 +100,7 @@ export const MOCK_SCORES: Record<string, ScoreReport> = {
 export const PARSER_LOGS = [
   "Initializing parsing agent context...",
   "Cloning repository from submitted GitHub URL...",
-  "Target file found: README.md",
+  "Target file found:",
   "Reading file structure and metadata...",
   "Executing NLP keyword extraction on markdown header trees...",
   "Extracting project title and objective summary...",

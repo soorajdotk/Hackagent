@@ -34,8 +34,8 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
     },
     {
       num: "2",
-      title: "README Extraction",
-      desc: "The README parsing agent extracts name, description, features, and use cases.",
+      title: " Extraction",
+      desc: "The  parsing agent extracts name, description, features, and use cases.",
       icon: Cpu,
       color: "text-neonPurple border-neonPurple/30"
     },
@@ -172,7 +172,7 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
             </h3>
           </div>
           <p className="text-gray-400 text-sm leading-relaxed">
-            HackJudge AI utilizes Somnia's decentralized AI agent framework. When a developer submits their code, the platform contract executes transactions that request off-chain compute. Autonomous agents check the repository README, compile metrics, and run consensus models, keeping developer identities secure and operations objective.
+            HackJudge AI utilizes Somnia's decentralized AI agent framework. When a developer submits their code, the platform contract executes transactions that request off-chain compute. Autonomous agents check the repository , compile metrics, and run consensus models, keeping developer identities secure and operations objective.
           </p>
         </Card>
 

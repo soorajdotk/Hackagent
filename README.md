@@ -1,73 +1,77 @@
-# React + TypeScript + Vite
+# HackJudge AI 🤖⚖️
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+HackJudge AI is a fully automated, decentralized hackathon project evaluation platform built on the **Somnia L1 Testnet** (Chain ID: `50312`). 
 
-Currently, two official plugins are available:
+The application utilizes autonomous on-chain agents to eliminate bias, scale evaluation, and provide immediate, transparent scorecards for hackathon submissions.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 🚀 Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* **MetaMask Integration**: Connects directly to Somnia Testnet for secure, developer-owned transactions.
+* **Stage 1 (Codebase Parser)**: Analyzes submitted GitHub repositories (fetching theme and details) on-chain using the `HackJudgeAgent` contract.
+* **Stage 2 (AI Consensus Scoring)**: Calls the `HackJudgeLLM` contract panel to rate the project across 4 core dimensions:
+  1. *Theme Relevance*
+  2. *Innovation*
+  3. *Technical Complexity*
+  4. *Real-World Impact*
+* **On-Chain Leaderboard**: Records and ranks all completed evaluations dynamically using verified on-chain transactions.
+* **Premium Cyberpunk Design**: Sleek obsidian dark-theme with cyberCyan glowing elements, stepper flow trackers, and real-time terminal emulator animations.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## ⛓ Deployed Smart Contracts (Somnia Testnet)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+The frontend interacts with the following contracts:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+| Contract | Purpose | Address |
+| --- | --- | --- |
+| **HackJudgeAgent** | Stage 1: Parser Agent | `0x740F96d0fcE396D65BfB02Fe0c877A5fbaB8CB19` |
+| **HackJudgeLLM** | Stage 2: Scorer / Rating Agent | `0x3A25f6D5E9Cb27dDC6Fdd5b78583A589BEb716F2` |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## 🛠 Tech Stack
+
+* **Frontend Framework**: React 19 + TypeScript + Vite
+* **Styling**: Tailwind CSS (obsidian-dark custom theme)
+* **Web3 Integration**: Ethers.js (v6) + BrowserProvider (MetaMask)
+* **Icons**: Lucide React
+
+---
+
+## 💻 Running Locally
+
+### Prerequisites
+
+Ensure you have [Node.js](https://nodejs.org/) installed (v18+ recommended).
+
+### 1. Install Dependencies
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Configure MetaMask for Somnia Testnet
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Use the following parameters to add the network:
+* **Network Name**: `Somnia Testnet`
+* **RPC URL**: `https://dream-rpc.somnia.network`
+* **Chain ID**: `50312` (Hex: `0xC488`)
+* **Currency Symbol**: `STT`
+* **Block Explorer**: `https://shannon-explorer.somnia.network`
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 3. Start Development Server
+
+```bash
+npm run dev
 ```
+
+The application will run on `http://localhost:5173`.
+
+### 4. Build for Production
+
+```bash
+npm run build
+```
+This builds the optimized production bundle under `/dist` using `tsc` type compilation and Vite.
