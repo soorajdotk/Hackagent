@@ -5,10 +5,15 @@ import { Trophy, Search, Calendar, ArrowRight } from 'lucide-react';
 
 interface LeaderboardProps {
   setActiveTab: (tab: string) => void;
+  setParserRequestId: (id: string) => void;
   setScoreRequestId: (id: string) => void;
 }
 
-export const Leaderboard: React.FC<LeaderboardProps> = ({ setActiveTab, setScoreRequestId }) => {
+export const Leaderboard: React.FC<LeaderboardProps> = ({ 
+  setActiveTab, 
+  setParserRequestId, 
+  setScoreRequestId 
+}) => {
   const { getLeaderboard } = useWeb3();
   const [items, setItems] = useState<LeaderboardItem[]>([]);
   const [filterText, setFilterText] = useState('');
@@ -19,7 +24,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ setActiveTab, setScore
 
   const handleRowClick = (id: string) => {
     setScoreRequestId(id);
-    setActiveTab('scores');
+    setParserRequestId('');
+    setActiveTab('submit');
   };
 
   const getRankBadge = (rank: number) => {
@@ -152,15 +158,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ setActiveTab, setScore
 
                     {/* Source */}
                     <td className="py-4 px-6 text-center">
-                      {item.isMock ? (
-                        <span className="text-[10px] bg-cyberCyan/10 text-cyberCyan border border-cyberCyan/25 px-2 py-0.5 rounded uppercase font-extrabold tracking-wider">
-                          Demo Mock
-                        </span>
-                      ) : (
-                        <span className="text-[10px] bg-successGreen/10 text-successGreen border border-successGreen/25 px-2 py-0.5 rounded uppercase font-extrabold tracking-wider">
-                          On-Chain L1
-                        </span>
-                      )}
+                      <span className="text-[10px] bg-successGreen/10 text-successGreen border border-successGreen/25 px-2 py-0.5 rounded uppercase font-extrabold tracking-wider font-mono">
+                        On-Chain L1
+                      </span>
                     </td>
 
                     {/* Action */}

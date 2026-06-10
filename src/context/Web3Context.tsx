@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { getMockAnalysisByUrl, getMockScoreByAnalysis, type ProjectAnalysis, type ScoreReport } from '../utils/mockData';
+import { parseLLMResult } from '../utils/mockData';
 
 // Constants
 export const SOMNIA_CHAIN_ID = 50312;
@@ -16,7 +16,9 @@ const PARSER_ABI = [
   "function getAnalysis(uint256 requestId) external view returns (string memory result, bool completed)",
   "function getRequiredDeposit() external view returns (uint256)",
   "function pendingRequests(uint256) external view returns (bool)",
-  "function submissions(uint256) external view returns (string theme, string githubUrl, string analysis, bool completed)"
+  "function submissions(uint256) external view returns (string theme, string githubUrl, string analysis, bool completed)",
+  "event AnalysisRequested(uint256 indexed requestId)",
+  "event AnalysisCompleted(uint256 indexed requestId, string result)"
 ];
 
 const LLM_ABI = [
@@ -24,14 +26,12 @@ const LLM_ABI = [
   "function getScore(uint256 requestId) external view returns (string memory result, bool completed)",
   "function getRequiredDeposit() external view returns (uint256)",
   "function pendingRequests(uint256) external view returns (bool)",
-  "function scores(uint256) external view returns (string result, bool completed)"
+  "function scores(uint256) external view returns (string result, bool completed)",
+  "event EvaluationRequested(uint256 indexed requestId)",
+  "event EvaluationCompleted(uint256 indexed requestId, string result)"
 ];
 
 interface Web3ContextType {
-  // Config
-  isMockMode: boolean;
-  setMockMode: (val: boolean) => void;
-  
   // Wallet State
   account: string | null;
   chainId: number | null;
@@ -45,12 +45,12 @@ interface Web3ContextType {
   llmDeposit: string;
 
   // Parser Actions
-  submitProject: (theme: string, githubUrl: string) => Promise<string>;
-  getAnalysis: (requestId: string) => Promise<{ analysis: string; completed: boolean }>;
+  submitProject: (theme: string, githubUrl: string) => Promise<{ requestId: string; txHash: string }>;
+  getAnalysis: (requestId: any) => Promise<{ theme: string; analysis: string; completed: boolean }>;
   
   // LLM Actions
-  analyzeProject: (theme: string, analysis: string) => Promise<string>;
-  getScore: (requestId: string) => Promise<{ score: string; completed: boolean }>;
+  analyzeProject: (theme: string, analysis: string) => Promise<{ requestId: string; txHash: string }>;
+  getScore: (requestId: any) => Promise<{ score: string; completed: boolean }>;
 
   // Leaderboard persistence
   addToLeaderboard: (item: LeaderboardItem) => void;
@@ -65,23 +65,11 @@ export interface LeaderboardItem {
   overallScore: number;
   verdict: string;
   timestamp: number;
-  isMock: boolean;
 }
 
 const Web3Context = createContext<Web3ContextType | undefined>(undefined);
 
 export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Mode Selection
-  const [isMockMode, setIsMockModeState] = useState<boolean>(() => {
-    const saved = localStorage.getItem('hj_mock_mode');
-    return saved !== null ? saved === 'true' : false; // Default to Live DApp mode
-  });
-
-  const setMockMode = (val: boolean) => {
-    setIsMockModeState(val);
-    localStorage.setItem('hj_mock_mode', String(val));
-  };
-
   // Wallet Connection
   const [account, setAccount] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
@@ -132,7 +120,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch deposits dynamically if on Somnia network
   useEffect(() => {
     const fetchDeposits = async () => {
-      if (!isMockMode && isCorrectNetwork && (window as any).ethereum) {
+      if (isCorrectNetwork && (window as any).ethereum) {
         try {
           const provider = new ethers.BrowserProvider((window as any).ethereum);
           
@@ -149,7 +137,7 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     fetchDeposits();
-  }, [isMockMode, isCorrectNetwork, account]);
+  }, [isCorrectNetwork, account]);
 
   const connectWallet = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) {
@@ -180,7 +168,6 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
         params: [{ chainId: SOMNIA_CHAIN_ID_HEX }],
       });
     } catch (switchError: any) {
-      // This error code indicates that the chain has not been added to MetaMask.
       if (switchError.code === 4902) {
         try {
           await eth.request({
@@ -208,242 +195,184 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Parsing Submissions Local Database (for Mock Mode)
-  const submitProject = async (theme: string, githubUrl: string): Promise<string> => {
-    if (isMockMode) {
-      const mockReqId = String(1000 + Math.floor(Math.random() * 9000));
-      const mockDataStore = JSON.parse(localStorage.getItem('hj_mock_submissions') || '{}');
-      mockDataStore[mockReqId] = {
-        theme,
-        githubUrl,
-        analysis: "",
-        completed: false,
-        timestamp: Date.now()
-      };
-      localStorage.setItem('hj_mock_submissions', JSON.stringify(mockDataStore));
-      
-      // Start simulated parser in background (takes 5 seconds)
-      setTimeout(() => {
-        const store = JSON.parse(localStorage.getItem('hj_mock_submissions') || '{}');
-        if (store[mockReqId]) {
-          const { text } = getMockAnalysisByUrl(githubUrl, theme);
-          store[mockReqId].analysis = text;
-          store[mockReqId].completed = true;
-          localStorage.setItem('hj_mock_submissions', JSON.stringify(store));
-        }
-      }, 5000);
+  const submitProject = async (theme: string, githubUrl: string): Promise<{ requestId: string; txHash: string }> => {
+    if (!account) throw new Error("Wallet not connected");
+    if (!isCorrectNetwork) throw new Error("Incorrect network. Please switch to Somnia Testnet.");
+    
+    const provider = new ethers.BrowserProvider((window as any).ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(PARSER_AGENT_ADDRESS, PARSER_ABI, signer);
+    
+    const depositWei = ethers.parseEther(parserDeposit);
+    const tx = await contract.submitProject(theme, githubUrl, { value: depositWei });
+    const receipt = await tx.wait();
+    
+    if (!receipt) throw new Error("Transaction failed (no receipt returned).");
 
-      return mockReqId;
-    } else {
-      if (!account) throw new Error("Wallet not connected");
-      if (!isCorrectNetwork) throw new Error("Incorrect network. Please switch to Somnia Testnet.");
-      
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(PARSER_AGENT_ADDRESS, PARSER_ABI, signer);
-      
-      const depositWei = ethers.parseEther(parserDeposit);
-      const tx = await contract.submitProject(theme, githubUrl, { value: depositWei });
-      const receipt = await tx.wait();
-      
-      // Look for AnalysisRequested event or parse return value
-      // In Solidity, a tx receipt includes events. We can fetch parsed logs.
-      let requestId = "0";
-      for (const log of receipt.logs) {
+    let requestId = "0";
+
+    // 1. Try parsing logs with the contract's defined events
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() === PARSER_AGENT_ADDRESS.toLowerCase()) {
         try {
           const parsedLog = contract.interface.parseLog(log);
-          if (parsedLog && parsedLog.name === 'AnalysisRequested') {
+          if (parsedLog && parsedLog.args && parsedLog.args.requestId) {
             requestId = parsedLog.args.requestId.toString();
             break;
           }
         } catch (e) {
-          // ignore log parse errors of other logs
+          // ignore
         }
       }
-
-      if (requestId === "0") {
-        // Fallback: query submissions count or generate based on hash
-        requestId = String(parseInt(receipt.hash.slice(0, 10), 16));
-      }
-      
-      return requestId;
     }
-  };
 
-  const getAnalysis = async (requestId: string): Promise<{ analysis: string; completed: boolean }> => {
-    if (isMockMode) {
-      const store = JSON.parse(localStorage.getItem('hj_mock_submissions') || '{}');
-      const submission = store[requestId];
-      if (!submission) {
-        return { analysis: "", completed: false };
-      }
-      return {
-        analysis: submission.analysis,
-        completed: submission.completed
-      };
-    } else {
-      const provider = new ethers.JsonRpcProvider(SOMNIA_RPC_URL);
-      const contract = new ethers.Contract(PARSER_AGENT_ADDRESS, PARSER_ABI, provider);
-      try {
-        const result = await contract.getAnalysis(requestId);
-        return {
-          analysis: result[0],
-          completed: result[1]
-        };
-      } catch (e) {
-        console.error("Failed to query getAnalysis on-chain:", e);
-        return { analysis: "", completed: false };
-      }
-    }
-  };
-
-  // LLM Evaluation Local Database (for Mock Mode)
-  const analyzeProject = async (theme: string, analysis: string): Promise<string> => {
-    if (isMockMode) {
-      const mockReqId = String(20000 + Math.floor(Math.random() * 9000));
-      const mockScoreStore = JSON.parse(localStorage.getItem('hj_mock_scores') || '{}');
-      mockScoreStore[mockReqId] = {
-        theme,
-        analysis,
-        result: "",
-        completed: false,
-        timestamp: Date.now()
-      };
-      localStorage.setItem('hj_mock_scores', JSON.stringify(mockScoreStore));
-      
-      // Start simulated LLM in background (takes 5 seconds)
-      setTimeout(() => {
-        const store = JSON.parse(localStorage.getItem('hj_mock_scores') || '{}');
-        if (store[mockReqId]) {
-          const { text, parsed } = getMockScoreByAnalysis(analysis, theme);
-          store[mockReqId].result = text;
-          store[mockReqId].completed = true;
-          localStorage.setItem('hj_mock_scores', JSON.stringify(store));
-
-          // Extract project name for leaderboard
-          let projectName = "Unknown Project";
-          let githubUrl = "";
-          try {
-            const parsedAnalysis = JSON.parse(analysis) as ProjectAnalysis;
-            projectName = parsedAnalysis.projectName;
-          } catch(e){}
-
-          // Find githubUrl if possible by searching mock submissions
-          const submissionsStore = JSON.parse(localStorage.getItem('hj_mock_submissions') || '{}');
-          for (const key in submissionsStore) {
+    // 2. Fallback: Parse the first topic of logs emitted by this contract as a BigInt
+    if (requestId === "0") {
+      for (const log of receipt.logs) {
+        if (log.address.toLowerCase() === PARSER_AGENT_ADDRESS.toLowerCase()) {
+          if (log.topics && log.topics.length > 1) {
             try {
-              const subAnalysis = JSON.parse(submissionsStore[key].analysis) as ProjectAnalysis;
-              if (subAnalysis.projectName === projectName) {
-                githubUrl = submissionsStore[key].githubUrl;
+              const idVal = ethers.toBigInt(log.topics[1]);
+              if (idVal > 0n) {
+                requestId = idVal.toString();
                 break;
               }
-            } catch(e){}
+            } catch (err) {}
           }
-
-          // Automatically push to leaderboard
-          addToLeaderboard({
-            id: mockReqId,
-            projectName,
-            theme,
-            githubUrl: githubUrl || "https://github.com/project/repo",
-            overallScore: parsed.overallScore,
-            verdict: parsed.verdict,
-            timestamp: Date.now(),
-            isMock: true
-          });
         }
-      }, 5000);
+      }
+    }
 
-      return mockReqId;
-    } else {
-      if (!account) throw new Error("Wallet not connected");
-      if (!isCorrectNetwork) throw new Error("Incorrect network. Please switch to Somnia Testnet.");
-      
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(LLM_JUDGE_ADDRESS, LLM_ABI, signer);
-      
-      const depositWei = ethers.parseEther(llmDeposit);
-      const tx = await contract.analyzeProject(theme, analysis, { value: depositWei });
-      const receipt = await tx.wait();
-      
-      let requestId = "0";
-      for (const log of receipt.logs) {
+    if (requestId === "0") {
+      throw new Error("Failed to extract requestId from transaction logs.");
+    }
+    
+    return { requestId, txHash: receipt.hash };
+  };
+
+  const getAnalysis = async (requestId: any): Promise<{ theme: string; analysis: string; completed: boolean }> => {
+    let cleanId = requestId;
+    if (requestId && typeof requestId === 'object') {
+      cleanId = requestId.requestId || requestId.id || "";
+    }
+    const provider = new ethers.JsonRpcProvider(SOMNIA_RPC_URL);
+    const contract = new ethers.Contract(PARSER_AGENT_ADDRESS, PARSER_ABI, provider);
+    try {
+      const result = await contract.submissions(cleanId);
+      return {
+        theme: result[0],
+        analysis: result[2],
+        completed: result[3]
+      };
+    } catch (e: any) {
+      console.error("Failed to query submissions mapping on-chain:", e);
+      throw new Error(e.message || "Failed to query submissions mapping on-chain.");
+    }
+  };
+
+  const analyzeProject = async (theme: string, analysis: string): Promise<{ requestId: string; txHash: string }> => {
+    if (!account) throw new Error("Wallet not connected");
+    if (!isCorrectNetwork) throw new Error("Incorrect network. Please switch to Somnia Testnet.");
+    
+    const provider = new ethers.BrowserProvider((window as any).ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(LLM_JUDGE_ADDRESS, LLM_ABI, signer);
+    
+    const depositWei = ethers.parseEther(llmDeposit);
+    const tx = await contract.analyzeProject(theme, analysis, { value: depositWei });
+    const receipt = await tx.wait();
+    
+    if (!receipt) throw new Error("Transaction failed (no receipt returned).");
+
+    let requestId = "0";
+
+    // 1. Try parsing logs with the contract's defined events
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() === LLM_JUDGE_ADDRESS.toLowerCase()) {
         try {
           const parsedLog = contract.interface.parseLog(log);
-          if (parsedLog && parsedLog.name === 'EvaluationRequested') {
+          if (parsedLog && parsedLog.args && parsedLog.args.requestId) {
             requestId = parsedLog.args.requestId.toString();
             break;
           }
-        } catch (e) {}
+        } catch (e) {
+          // ignore
+        }
       }
-
-      if (requestId === "0") {
-        requestId = String(parseInt(receipt.hash.slice(0, 10), 16));
-      }
-      
-      return requestId;
     }
+
+    // 2. Fallback: Parse the first topic of logs emitted by this contract as a BigInt
+    if (requestId === "0") {
+      for (const log of receipt.logs) {
+        if (log.address.toLowerCase() === LLM_JUDGE_ADDRESS.toLowerCase()) {
+          if (log.topics && log.topics.length > 1) {
+            try {
+              const idVal = ethers.toBigInt(log.topics[1]);
+              if (idVal > 0n) {
+                requestId = idVal.toString();
+                break;
+              }
+            } catch (err) {}
+          }
+        }
+      }
+    }
+
+    if (requestId === "0") {
+      throw new Error("Failed to extract requestId from transaction logs.");
+    }
+    
+    return { requestId, txHash: receipt.hash };
   };
 
-  const getScore = async (requestId: string): Promise<{ score: string; completed: boolean }> => {
-    if (isMockMode) {
-      const store = JSON.parse(localStorage.getItem('hj_mock_scores') || '{}');
-      const score = store[requestId];
-      if (!score) {
-        return { score: "", completed: false };
+  const getScore = async (requestId: any): Promise<{ score: string; completed: boolean }> => {
+    let cleanId = requestId;
+    if (requestId && typeof requestId === 'object') {
+      cleanId = requestId.requestId || requestId.id || "";
+    }
+    const provider = new ethers.JsonRpcProvider(SOMNIA_RPC_URL);
+    const contract = new ethers.Contract(LLM_JUDGE_ADDRESS, LLM_ABI, provider);
+    try {
+      const result = await contract.getScore(cleanId);
+      
+      // If completed on-chain, sync to leaderboard locally
+      if (result[1]) {
+        const scoreText = result[0];
+        try {
+          const parsedScore = parseLLMResult(scoreText);
+          
+          // Check if already in leaderboard
+          const currentLeaderboard = getLeaderboard();
+          const cleanIdStr = String(cleanId);
+          if (!currentLeaderboard.some(item => item.id === cleanIdStr)) {
+            addToLeaderboard({
+              id: cleanIdStr,
+              projectName: parsedScore.projectName || `Project #${cleanId}`,
+              theme: "On-Chain Evaluated",
+              githubUrl: "Somnia Deployed Repo",
+              overallScore: parsedScore.overallScore || 0,
+              verdict: parsedScore.verdict || "Completed",
+              timestamp: Date.now()
+            });
+          }
+        } catch(e) {}
       }
+      
       return {
-        score: score.result,
-        completed: score.completed
+        score: result[0],
+        completed: result[1]
       };
-    } else {
-      const provider = new ethers.JsonRpcProvider(SOMNIA_RPC_URL);
-      const contract = new ethers.Contract(LLM_JUDGE_ADDRESS, LLM_ABI, provider);
-      try {
-        const result = await contract.getScore(requestId);
-        
-        // If completed on-chain, let's sync to leaderboard locally
-        if (result[1]) {
-          let scoreText = result[0];
-          try {
-            const parsedScore = JSON.parse(scoreText) as ScoreReport;
-            
-            // Check if already in leaderboard
-            const currentLeaderboard = getLeaderboard();
-            if (!currentLeaderboard.some(item => item.id === requestId)) {
-              addToLeaderboard({
-                id: requestId,
-                projectName: parsedScore.projectName || `Project #${requestId}`,
-                theme: "On-Chain Evaluated",
-                githubUrl: "Somnia Deployed Repo",
-                overallScore: parsedScore.overallScore || 0,
-                verdict: parsedScore.verdict || "Completed",
-                timestamp: Date.now(),
-                isMock: false
-              });
-            }
-          } catch(e) {}
-        }
-        
-        return {
-          score: result[0],
-          completed: result[1]
-        };
-      } catch (e) {
-        console.error("Failed to query getScore on-chain:", e);
-        return { score: "", completed: false };
-      }
+    } catch (e: any) {
+      console.error("Failed to query getScore on-chain:", e);
+      throw new Error(e.message || "Failed to query getScore on-chain.");
     }
   };
 
   // Leaderboard Actions
   const addToLeaderboard = (item: LeaderboardItem) => {
     const list = getLeaderboard();
-    // Don't add duplicate IDs
     if (list.some(x => x.id === item.id)) return;
     list.push(item);
-    // Sort descending by overallScore
     list.sort((a, b) => b.overallScore - a.overallScore);
     localStorage.setItem('hj_leaderboard', JSON.stringify(list));
   };
@@ -451,49 +380,13 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   const getLeaderboard = (): LeaderboardItem[] => {
     const data = localStorage.getItem('hj_leaderboard');
     if (!data) {
-      // Bootstrap with some standard items if empty
-      const initialItems: LeaderboardItem[] = [
-        {
-          id: "9991",
-          projectName: "TruthGate Protocol",
-          theme: "AI + Security",
-          githubUrl: "https://github.com/truthgate/protocol",
-          overallScore: 95,
-          verdict: "Outstanding",
-          timestamp: Date.now() - 3600000 * 24,
-          isMock: true
-        },
-        {
-          id: "9992",
-          projectName: "AeroYield Optimizer",
-          theme: "DeFi Innovation",
-          githubUrl: "https://github.com/aeroyield/optimizer",
-          overallScore: 91,
-          verdict: "Strong",
-          timestamp: Date.now() - 3600000 * 12,
-          isMock: true
-        },
-        {
-          id: "9993",
-          projectName: "SomniaVerse RPG",
-          theme: "On-chain Gaming",
-          githubUrl: "https://github.com/somniaverse/rpg",
-          overallScore: 89,
-          verdict: "Strong",
-          timestamp: Date.now() - 3600000 * 4,
-          isMock: true
-        }
-      ];
-      localStorage.setItem('hj_leaderboard', JSON.stringify(initialItems));
-      return initialItems;
+      return [];
     }
     return JSON.parse(data);
   };
 
   return (
     <Web3Context.Provider value={{
-      isMockMode,
-      setMockMode,
       account,
       chainId,
       isCorrectNetwork,

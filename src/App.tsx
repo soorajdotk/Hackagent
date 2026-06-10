@@ -3,18 +3,11 @@ import { Web3Provider } from './context/Web3Context';
 import { Navbar } from './components/Navbar';
 import { Home } from './pages/Home';
 import { Submit } from './pages/Submit';
-import { Analysis } from './pages/Analysis';
-import { Evaluation } from './pages/Evaluation';
-import { Scores } from './pages/Scores';
 import { Leaderboard } from './pages/Leaderboard';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('home');
   const [parserRequestId, setParserRequestId] = useState<string>('');
-  
-  // States passed between pages
-  const [themeForLLM, setThemeForLLM] = useState<string>('');
-  const [analysisForLLM, setAnalysisForLLM] = useState<string>('');
   const [scoreRequestId, setScoreRequestId] = useState<string>('');
 
   const renderActivePage = () => {
@@ -25,33 +18,8 @@ function AppContent() {
         return (
           <Submit 
             setActiveTab={setActiveTab} 
-            setParserRequestId={setParserRequestId} 
-          />
-        );
-      case 'analysis':
-        return (
-          <Analysis 
-            setActiveTab={setActiveTab}
             parserRequestId={parserRequestId}
             setParserRequestId={setParserRequestId}
-            setThemeForLLM={setThemeForLLM}
-            setAnalysisForLLM={setAnalysisForLLM}
-          />
-        );
-      case 'evaluation':
-        return (
-          <Evaluation 
-            setActiveTab={setActiveTab}
-            themeForLLM={themeForLLM}
-            setThemeForLLM={setThemeForLLM}
-            analysisForLLM={analysisForLLM}
-            setAnalysisForLLM={setAnalysisForLLM}
-            setScoreRequestId={setScoreRequestId}
-          />
-        );
-      case 'scores':
-        return (
-          <Scores 
             scoreRequestId={scoreRequestId}
             setScoreRequestId={setScoreRequestId}
           />
@@ -60,6 +28,7 @@ function AppContent() {
         return (
           <Leaderboard 
             setActiveTab={setActiveTab}
+            setParserRequestId={setParserRequestId}
             setScoreRequestId={setScoreRequestId}
           />
         );

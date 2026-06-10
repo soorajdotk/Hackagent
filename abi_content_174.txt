@@ -1,0 +1,13 @@
+<USER_REQUEST>
+i have given the contract abi and contract address where is the whole daa i want a working dapp first connect the metamask and the whole thing to be done
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-10T23:26:14+05:30.
+
+The user's current state is as follows:
+Browser State:
+  Page F3558826C6E82336D863CF8FC8FB003A () - http://127.0.0.1:5173/ [ACTIVE]
+    Viewport: 0x0, Page Height: 0
+Running terminal commands:
+- npm run dev (in c:\Users\sudhe\OneDrive\Pictures\Desktop\Hackagent, running for 8m52s)
+</ADDITIONAL_METADATA>

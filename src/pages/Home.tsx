@@ -15,7 +15,7 @@ interface HomeProps {
 }
 
 export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
-  const { isMockMode, connectWallet, account } = useWeb3();
+  const { connectWallet, account } = useWeb3();
 
   const stats = [
     { label: "Active Evaluation Agents", val: "2 Autonomous" },
@@ -87,16 +87,14 @@ export const Home: React.FC<HomeProps> = ({ setActiveTab }) => {
             <Play className="h-4 w-4 fill-black group-hover:translate-x-1 transition-transform" />
           </button>
           
-          {isMockMode && (
-            <button
-              onClick={() => setActiveTab('leaderboard')}
-              className="flex items-center gap-2 bg-darkCard border border-cyberCyan/30 hover:bg-darkCard/80 text-gray-200 font-bold px-8 py-3.5 rounded-xl transition-all"
-            >
-              View Leaderboard
-            </button>
-          )}
+          <button
+            onClick={() => setActiveTab('leaderboard')}
+            className="flex items-center gap-2 bg-darkCard border border-cyberCyan/30 hover:bg-darkCard/80 text-gray-200 font-bold px-8 py-3.5 rounded-xl transition-all"
+          >
+            View Leaderboard
+          </button>
 
-          {!isMockMode && !account && (
+          {!account && (
             <button
               onClick={connectWallet}
               className="flex items-center gap-2 bg-neonPurple/20 border border-neonPurple/55 text-white hover:bg-neonPurple/30 font-bold px-8 py-3.5 rounded-xl transition-all"

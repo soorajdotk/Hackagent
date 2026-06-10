@@ -1,6 +1,6 @@
 import React from 'react';
 import { useWeb3 } from '../context/Web3Context';
-import { Shield, Wallet, Cpu, ToggleLeft, ToggleRight, Info } from 'lucide-react';
+import { Shield, Wallet, Info } from 'lucide-react';
 
 interface NavbarProps {
   activeTab: string;
@@ -9,8 +9,6 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   const { 
-    isMockMode, 
-    setMockMode, 
     account, 
     isCorrectNetwork, 
     isConnecting, 
@@ -24,10 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
 
   const navItems = [
     { id: 'home', label: 'Overview' },
-    { id: 'submit', label: 'Submit Project' },
-    { id: 'analysis', label: 'README analysis' },
-    { id: 'evaluation', label: 'LLM Evaluation' },
-    { id: 'scores', label: 'Score Dashboard' },
+    { id: 'submit', label: 'Analyze Project' },
     { id: 'leaderboard', label: 'Leaderboard' }
   ];
 
@@ -58,56 +53,32 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Toggle Mode */}
-        <div className="flex items-center gap-2 bg-darkCard p-1.5 px-3 rounded-full border border-cyberCyan/10 text-xs">
-          <span className={`font-semibold ${isMockMode ? 'text-cyberCyan' : 'text-gray-500'}`}>Demo Mode</span>
-          <button 
-            onClick={() => setMockMode(!isMockMode)} 
-            className="text-gray-400 hover:text-white transition-colors"
-            title="Toggle between Demo Mock Mode and Live Blockchain Mode"
-          >
-            {isMockMode ? (
-              <ToggleRight className="h-6 w-6 text-cyberCyan" />
-            ) : (
-              <ToggleLeft className="h-6 w-6 text-gray-500" />
-            )}
-          </button>
-          <span className={`font-semibold ${!isMockMode ? 'text-cyberBlue' : 'text-gray-500'}`}>Live RPC</span>
-        </div>
-
         {/* Web3 Connections */}
-        {isMockMode ? (
-          <div className="flex items-center gap-2 bg-cyberCyan/10 text-cyberCyan px-4 py-2 rounded-xl border border-cyberCyan/30 text-sm font-semibold">
-            <Cpu className="h-4 w-4 animate-pulse" />
-            Demo Wallet (STT: ∞)
-          </div>
-        ) : (
-          <div>
-            {!account ? (
-              <button
-                onClick={connectWallet}
-                disabled={isConnecting}
-                className="flex items-center gap-2 bg-gradient-to-r from-cyberCyan to-cyberBlue hover:brightness-110 active:scale-95 text-black px-4 py-2 rounded-xl font-bold text-sm shadow-glow transition-all duration-200"
-              >
-                <Wallet className="h-4 w-4" />
-                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-              </button>
-            ) : !isCorrectNetwork ? (
-              <button
-                onClick={switchNetwork}
-                className="flex items-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-4 py-2 rounded-xl font-bold text-sm transition-all animate-pulse"
-              >
-                <Info className="h-4 w-4" />
-                Switch to Somnia Testnet
-              </button>
-            ) : (
-              <div className="flex items-center gap-3 bg-darkCard px-4 py-2 rounded-xl border border-cyberCyan/20 text-sm font-medium">
-                <span className="w-2.5 h-2.5 rounded-full bg-successGreen shadow-[0_0_8px_rgba(0,230,118,0.7)]"></span>
-                <span className="text-gray-300 font-mono">{truncateAddress(account)}</span>
-              </div>
-            )}
-          </div>
-        )}
+        <div>
+          {!account ? (
+            <button
+              onClick={connectWallet}
+              disabled={isConnecting}
+              className="flex items-center gap-2 bg-gradient-to-r from-cyberCyan to-cyberBlue hover:brightness-110 active:scale-95 text-black px-4 py-2 rounded-xl font-bold text-sm shadow-glow transition-all duration-200"
+            >
+              <Wallet className="h-4.5 w-4.5" />
+              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+            </button>
+          ) : !isCorrectNetwork ? (
+            <button
+              onClick={switchNetwork}
+              className="flex items-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-4 py-2 rounded-xl font-bold text-sm transition-all animate-pulse"
+            >
+              <Info className="h-4.5 w-4.5" />
+              Switch to Somnia Testnet
+            </button>
+          ) : (
+            <div className="flex items-center gap-3 bg-darkCard px-4 py-2 rounded-xl border border-cyberCyan/20 text-sm font-medium">
+              <span className="w-2.5 h-2.5 rounded-full bg-successGreen shadow-[0_0_8px_rgba(0,230,118,0.7)]"></span>
+              <span className="text-gray-300 font-mono">{truncateAddress(account)}</span>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

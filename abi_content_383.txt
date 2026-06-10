@@ -1,0 +1,13 @@
+<USER_REQUEST>
+i dont want the mock mode all the function giben in the abi should work now i think it is not working tin the frontend
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-11T00:13:59+05:30.
+
+The user's current state is as follows:
+Active Document: c:\Users\sudhe\OneDrive\Pictures\Desktop\Hackagent\src\pages\Submit.tsx (LANGUAGE_TSX)
+Cursor is on line: 717
+Other open documents:
+- c:\Users\sudhe\OneDrive\Pictures\Desktop\Hackagent\src\pages\Submit.tsx (LANGUAGE_TSX)
+- c:\Users\sudhe\OneDrive\Pictures\Desktop\Hackagent\src\context\Web3Context.tsx (LANGUAGE_TSX)
+</ADDITIONAL_METADATA>

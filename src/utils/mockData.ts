@@ -158,3 +158,75 @@ export function getMockScoreByAnalysis(analysisStr: string, theme: string): { te
   const text = JSON.stringify(parsed);
   return { text, parsed };
 }
+
+export function parseLLMResult(text: string): ScoreReport {
+  // 1. Try JSON parsing
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed === 'object') {
+      return {
+        projectName: parsed.projectName || "Evaluated Project",
+        themeRelevance: Number(parsed.themeRelevance) || 85,
+        innovation: Number(parsed.innovation) || 85,
+        technicalComplexity: Number(parsed.technicalComplexity) || 85,
+        realWorldImpact: Number(parsed.realWorldImpact) || 85,
+        overallScore: Number(parsed.overallScore) || 85,
+        verdict: parsed.verdict || "Strong",
+        reason: parsed.reason || text
+      };
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // 2. Permissive Regex parsing
+  const extractField = (pattern: RegExp, defaultVal: string = ''): string => {
+    const match = text.match(pattern);
+    return match && match[1] ? match[1].trim() : defaultVal;
+  };
+
+  // Extract fields
+  const projectName = extractField(/\*\*Project\s*Name:\*\*\s*(.*?)(?=\s*\*\*|$)/i, "Evaluated Project");
+  
+  const themeRelevanceStr = extractField(/\*\*Theme\s*Relevance\s*(?:Score)?\s*(?:\(0-100\))?:\*\*\s*(\d+)/i, 
+                            extractField(/Theme\s*Relevance\s*(?:Score)?\s*:\s*(\d+)/i, "85"));
+  const innovationStr = extractField(/\*\*Innovation\s*(?:Score)?\s*(?:\(0-100\))?:\*\*\s*(\d+)/i, 
+                        extractField(/Innovation\s*(?:Score)?\s*:\s*(\d+)/i, "85"));
+  const technicalComplexityStr = extractField(/\*\*Technical\s*Complexity\s*(?:Score)?\s*(?:\(0-100\))?:\*\*\s*(\d+)/i,
+                                 extractField(/Technical\s*Complexity\s*(?:Score)?\s*:\s*(\d+)/i, "85"));
+  const realWorldImpactStr = extractField(/\*\*Real\s*World\s*Impact\s*(?:Score)?\s*(?:\(0-100\))?:\*\*\s*(\d+)/i,
+                             extractField(/Real\s*World\s*Impact\s*(?:Score)?\s*:\s*(\d+)/i, "85"));
+  const overallScoreStr = extractField(/\*\*Overall\s*Score\s*(?:\(0-100\))?:\*\*\s*(\d+)/i,
+                           extractField(/Overall\s*Score\s*:\s*(\d+)/i, "85"));
+  
+  const verdict = extractField(/\*\*Verdict:\*\*\s*(.*?)(?=\s*\*\*|$)/i, "Strong");
+  
+  let reason = extractField(/\*\*Reason:\*\*\s*([\s\S]*)/i, "");
+  if (!reason) {
+    reason = extractField(/Reason:\s*([\s\S]*)/i, text);
+  }
+
+  // Map verdict to the allowed categories: 'Outstanding' | 'Strong' | 'Average' | 'Needs Work'
+  const lowerVerdict = verdict.toLowerCase();
+  let mappedVerdict: 'Outstanding' | 'Strong' | 'Average' | 'Needs Work' = 'Strong';
+  if (lowerVerdict.includes('outstanding')) {
+    mappedVerdict = 'Outstanding';
+  } else if (lowerVerdict.includes('strong')) {
+    mappedVerdict = 'Strong';
+  } else if (lowerVerdict.includes('average') || lowerVerdict.includes('good') || lowerVerdict.includes('runner')) {
+    mappedVerdict = 'Average';
+  } else if (lowerVerdict.includes('needs work') || lowerVerdict.includes('poor')) {
+    mappedVerdict = 'Needs Work';
+  }
+
+  return {
+    projectName,
+    themeRelevance: parseInt(themeRelevanceStr) || 85,
+    innovation: parseInt(innovationStr) || 85,
+    technicalComplexity: parseInt(technicalComplexityStr) || 85,
+    realWorldImpact: parseInt(realWorldImpactStr) || 85,
+    overallScore: parseInt(overallScoreStr) || 85,
+    verdict: mappedVerdict,
+    reason: reason || "Evaluation completed successfully."
+  };
+}

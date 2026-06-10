@@ -1,0 +1,14 @@
+<USER_REQUEST>
+after submitting the project doesnt have any movement after submitting then gett an request id that should pass to the result then it give a description about the project that in the github link that should pass to the llm projectanalysis then the request id is generated using the id get a result of the project wiht a mark these all are done automatically when the user submits the project nothing is happend whole solidty abi are given ealry so u should work on it
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-10T23:44:12+05:30.
+
+The user's current state is as follows:
+Active Document: c:\Users\sudhe\OneDrive\Pictures\Desktop\Hackagent\src\pages\Submit.tsx (LANGUAGE_TSX)
+Cursor is on line: 1
+Other open documents:
+- c:\Users\sudhe\OneDrive\Pictures\Desktop\Hackagent\src\pages\Submit.tsx (LANGUAGE_TSX)
+- c:\Users\sudhe\OneDrive\Pictures\Desktop\Hackagent\src\context\Web3Context.tsx (LANGUAGE_TSX)
+- c:\Users\sudhe\OneDrive\Pictures\Desktop\Hackagent\src\App.tsx (LANGUAGE_TSX)
+</ADDITIONAL_METADATA>
